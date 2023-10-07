@@ -35,7 +35,12 @@ class ClientTest extends \PHPUnit\Framework\TestCase
             'payload'=>[
                 'test'=>'xxxx',
                 'user'=>1111
+            ],
+            'opts'=>[
+                'timeout'=>0,
             ]
+        ],[
+            'queue'=>'test'        
         ]);
         $this->assertTrue($res);
     }
