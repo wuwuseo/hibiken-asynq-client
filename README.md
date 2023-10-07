@@ -18,7 +18,7 @@ https://github.com/hibiken/asynq
 
 ## install
 
-composer require wuwuseo/hibiken-asynq-client
+composer require wuwuseo/hibiken-asynq-client:dev-main
 
 ## used
 
