@@ -16,6 +16,10 @@ https://github.com/hibiken/asynq
 "ext-redis": "^5.3",
 ```
 
+## install
+
+composer require wuwuseo/hibiken-asynq-client
+
 ## used
 
  use Client to put tasks on queues.
