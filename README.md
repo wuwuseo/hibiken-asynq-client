@@ -2,7 +2,12 @@
 
 ## This is a client for the hibiken/asynq GO task queue used to send asynq tasks in PHP.
 
-## https://github.com/hibiken/asynq 
+## Asynq issues Client in other languages
+https://github.com/hibiken/asynq/issues/105#issue-577400538
+https://github.com/hibiken/asynq/issues/105#issuecomment-875502989
+
+## Asynq 
+https://github.com/hibiken/asynq 
   Asynq is a Go library for queueing tasks and processing them asynchronously with workers. It's backed by Redis and is designed to be scalable yet easy to get started.
 
 ## required
