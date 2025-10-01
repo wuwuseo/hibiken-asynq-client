@@ -1,12 +1,18 @@
 {
     "name": "wuwuseo/hibiken-asynq-client",
-    "description": "go hibiken/asynq client",
+    "description": "优化版 PHP 客户端，用于与 go hibiken/asynq 任务队列系统交互，提供流畅的 API、中间件支持和性能优化",
     "type": "library",
     "require": {
         "php": "^8.1",
-        "ext-redis": "^5.3",
+        "ext-redis": "^5.3 || ^6.0",
         "google/protobuf": "^3.24",
         "ramsey/uuid": "^4.7"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.6"
+    },
+    "suggest": {
+        "monolog/monolog": "用于更高级的日志记录功能"
     },
     "license": "MIT",
     "autoload": {
@@ -22,7 +28,7 @@
     "authors": [
         {
             "name": "五五",
-            "email": "15093565100@163.com"
+            "email": "753993761@qq.com"
         }
     ],
     "require-dev": {

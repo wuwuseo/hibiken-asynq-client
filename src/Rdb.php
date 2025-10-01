@@ -2,9 +2,11 @@
 
 namespace Wuwuseo\HibikenAsynqClient;
 
+use \Redis;
+
 class Rdb
 {
-    protected \Redis $redis;
+    protected Redis $redis;
 
     public function __construct(\Redis $redis)
     {
