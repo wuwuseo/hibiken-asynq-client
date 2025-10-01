@@ -2,7 +2,7 @@
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
-use Wuwuseo\HibikenAsynqClient\OptimizedClient;
+use Wuwuseo\HibikenAsynqClient\Client;
 use Wuwuseo\HibikenAsynqClient\TaskOptions;
 
 // 1. 基础连接与配置
@@ -13,7 +13,7 @@ function basicConnection()
     $redis->connect('127.0.0.1', 6379);
     
     // 创建基本客户端
-    $client = new OptimizedClient($redis);
+    $client = new Client($redis);
     
     // 入队一个简单任务
     $result = $client->enqueue(
@@ -42,7 +42,7 @@ function withLogger()
         $logger->pushHandler(new \Monolog\Handler\StreamHandler('asynq.log', \Monolog\Logger::DEBUG));
         
         // 创建带日志的客户端
-        $client = new OptimizedClient($redis, $logger);
+        $client = new Client($redis, $logger);
         
         // 入队任务
         $result = $client->enqueue(
@@ -62,7 +62,7 @@ function withLogger()
         echo "当前将使用无日志客户端继续执行\n";
         
         // 使用无日志客户端
-        $client = new OptimizedClient($redis);
+        $client = new Client($redis);
         
         // 入队任务
         $result = $client->enqueue(
@@ -85,7 +85,7 @@ function withTaskOptions()
     $redis->connect('127.0.0.1', 6379);
     
     // 创建客户端
-    $client = new OptimizedClient($redis);
+    $client = new Client($redis);
     
     // 使用流畅的 TaskOptions API 配置任务
     $options = (new TaskOptions())
@@ -116,7 +116,7 @@ function delayedTask()
     $redis->connect('127.0.0.1', 6379);
     
     // 创建客户端
-    $client = new OptimizedClient($redis);
+    $client = new Client($redis);
     
     // 延迟 5 分钟执行的任务
     $result = $client->enqueueIn(
@@ -140,7 +140,7 @@ function uniqueTask()
     $redis->connect('127.0.0.1', 6379);
     
     // 创建客户端
-    $client = new OptimizedClient($redis);
+    $client = new Client($redis);
     
     // 配置唯一性任务，有效期 1 小时
     $options = (new TaskOptions())
@@ -157,8 +157,8 @@ function uniqueTask()
         ],
         $options
     );
-    
-    echo "唯一任务入队结果: " . ($result ? '成功' : '失败') . "\n";
+
+    echo "唯一任务入队结果: " . ($result !== -1 ? '成功' : '失败') . "\n";
     echo "(如果在 1 小时内再次运行此代码，将返回唯一键已存在的错误)\n";
 }
 
@@ -170,7 +170,7 @@ function groupedTask()
     $redis->connect('127.0.0.1', 6379);
     
     // 创建客户端
-    $client = new OptimizedClient($redis);
+    $client = new Client($redis);
     
     // 创建多个同组任务
     $groupId = 'batch_export_' . date('YmdHis');
@@ -207,7 +207,7 @@ function withMiddleware()
     $redis->connect('127.0.0.1', 6379);
     
     // 创建客户端
-    $client = new OptimizedClient($redis);
+    $client = new Client($redis);
     
     // 添加日志中间件
     $client->addMiddleware(function ($taskData, $next) {
@@ -239,7 +239,7 @@ function customNamespace()
     $redis->connect('127.0.0.1', 6379);
     
     // 创建使用自定义命名空间的客户端
-    $client = new OptimizedClient($redis, null, 'my_app_asynq');
+    $client = new Client($redis, null, 'my_app_asynq');
     
     // 或者使用 setter 方法
     // $client->setNamespace('my_app_asynq');

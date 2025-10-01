@@ -40,7 +40,7 @@ composer require wuwuseo/hibiken-asynq-client:dev-main
 
 
 ```bash
-composer require wuwuseo/hibiken-asynq-client:1.1.0
+composer require wuwuseo/hibiken-asynq-client:1.1.2
 ```
 
 
@@ -50,14 +50,14 @@ composer require wuwuseo/hibiken-asynq-client:1.1.0
 ### 1. 创建客户端
 
 ```php
-use Wuwuseo\HibikenAsynqClient\OptimizedClient;
+use Wuwuseo\HibikenAsynqClient\Client;
 
 // 创建 Redis 连接
 $redis = new Redis();
 $redis->connect('127.0.0.1', 6379);
 
 // 创建基本客户端
-$client = new OptimizedClient($redis);
+$client = new Client($redis);
 ```
 
 ### 2. 发送基本任务
@@ -205,7 +205,7 @@ $logger = new Logger('asynq-client');
 $logger->pushHandler(new StreamHandler('asynq.log', Logger::DEBUG));
 
 // 创建带日志的客户端
-$client = new OptimizedClient($redis, $logger);
+$client = new Client($redis, $logger);
 
 // 客户端现在会记录所有操作
 ```
@@ -214,7 +214,7 @@ $client = new OptimizedClient($redis, $logger);
 
 ```php
 // 在构造时设置命名空间
-$client = new OptimizedClient($redis, null, 'my_application_namespace');
+$client = new Client($redis, null, 'my_application_namespace');
 
 // 或者之后设置
 $client->setNamespace('my_application_namespace');
@@ -225,7 +225,7 @@ $client->setNamespace('my_application_namespace');
 优化版客户端包含多项性能改进：
 
 1. **Redis 键缓存** - 缓存常用的 Redis 键，减少字符串拼接操作
-2. **事务支持** - 使用 Redis 事务确保任务操作的原子性
+2. **Lua 脚本支持** - 使用 Redis lua脚本确保任务操作的原子性
 3. **错误处理** - 完善的异常捕获和资源清理机制
 4. **灵活配置** - 支持自定义超时、重试策略等
 

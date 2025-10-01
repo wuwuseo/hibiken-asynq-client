@@ -16,7 +16,25 @@ class Rdb
      * @var \Redis|null Redis 实例，使用前需确保 Redis 扩展已安装
      */
     protected \Redis $redis;
-    protected string $queuesKey = "asynq:queues";
+    protected string $queuesKey = "queues";    
+    
+    /**
+     * 获取带命名空间的queuesKey
+     * 
+     * @return string 带命名空间的queuesKey
+     */
+    protected function getQueuesKey(): string
+    {
+        return $this->getNamespacedKey($this->queuesKey);
+    }
+    protected string $namespace = "";
+    
+    /**
+     * Redis键缓存，用于存储生成的Redis键，减少字符串拼接操作
+     * 
+     * @var array
+     */
+    protected array $keyCache = [];
     
     /**
      * 错误信息
@@ -37,15 +55,52 @@ class Rdb
      * Rdb 构造函数
      * 
      * @param \Redis $redis Redis 实例
+     * @param string $namespace Redis命名空间
      * @param LoggerInterface|null $logger 日志记录器
      */
     public function __construct(
         \Redis $redis,
+        string $namespace = "",
         LoggerInterface $logger = null
     ) {
         $this->redis = $redis;
+        $this->namespace = $namespace;
         $this->logger = $logger ?? new NullLogger();
         $this->initLuaScripts();
+        $this->initKeyCache();
+    }
+    
+    /**
+     * 初始化键缓存
+     */
+    protected function initKeyCache()
+    {
+        $this->keyCache = [];
+    }
+    
+    /**
+     * 设置Redis命名空间
+     * 
+     * @param string $namespace 命名空间
+     */
+    public function setNamespace(string $namespace)
+    {
+        $this->namespace = $namespace;
+        $this->initKeyCache(); // 重置键缓存
+    }
+    
+    /**
+     * 获取带命名空间的键
+     * 
+     * @param string $key 原始键
+     * @return string 带命名空间的键
+     */
+    protected function getNamespacedKey(string $key): string
+    {
+        if (empty($this->namespace)) {
+            return $key;
+        }
+        return $this->namespace . ":" . $key;
     }
     
     /**
@@ -205,7 +260,11 @@ class Rdb
      */
     protected function queueKeyPrefix(string $qname): string
     {
-        return sprintf('asynq:{%s}:', $qname);
+        $cacheKey = "queue_prefix:" . $qname;
+        if (!isset($this->keyCache[$cacheKey])) {
+            $this->keyCache[$cacheKey] = $this->getNamespacedKey(sprintf('{%s}:', $qname));
+        }
+        return $this->keyCache[$cacheKey];
     }
 
     /**
@@ -216,7 +275,11 @@ class Rdb
      */
     protected function taskKeyPrefix(string $qname): string
     {
-        return sprintf('%st:', $this->queueKeyPrefix($qname));
+        $cacheKey = "task_prefix:" . $qname;
+        if (!isset($this->keyCache[$cacheKey])) {
+            $this->keyCache[$cacheKey] = sprintf('%st:', $this->queueKeyPrefix($qname));
+        }
+        return $this->keyCache[$cacheKey];
     }
 
     /**
@@ -227,7 +290,11 @@ class Rdb
      */
     protected function groupKeyPrefix(string $qname): string
     {
-        return sprintf('%sg:', $this->queueKeyPrefix($qname));
+        $cacheKey = "group_prefix:" . $qname;
+        if (!isset($this->keyCache[$cacheKey])) {
+            $this->keyCache[$cacheKey] = sprintf('%sg:', $this->queueKeyPrefix($qname));
+        }
+        return $this->keyCache[$cacheKey];
     }
 
     /**
@@ -239,7 +306,11 @@ class Rdb
      */
     protected function taskKey(string $qname, string $id): string
     {
-        return sprintf('%s%s', $this->taskKeyPrefix($qname), $id);
+        $cacheKey = "task:" . $qname . ":" . $id;
+        if (!isset($this->keyCache[$cacheKey])) {
+            $this->keyCache[$cacheKey] = sprintf('%s%s', $this->taskKeyPrefix($qname), $id);
+        }
+        return $this->keyCache[$cacheKey];
     }
 
     /**
@@ -250,7 +321,11 @@ class Rdb
      */
     protected function pendingKey(string $qname): string
     {
-        return sprintf('%spending', $this->queueKeyPrefix($qname));
+        $cacheKey = "pending:" . $qname;
+        if (!isset($this->keyCache[$cacheKey])) {
+            $this->keyCache[$cacheKey] = sprintf('%spending', $this->queueKeyPrefix($qname));
+        }
+        return $this->keyCache[$cacheKey];
     }
 
     /**
@@ -261,7 +336,11 @@ class Rdb
      */
     protected function scheduledKey(string $qname): string
     {
-        return sprintf('%sscheduled', $this->queueKeyPrefix($qname));
+        $cacheKey = "scheduled:" . $qname;
+        if (!isset($this->keyCache[$cacheKey])) {
+            $this->keyCache[$cacheKey] = sprintf('%sscheduled', $this->queueKeyPrefix($qname));
+        }
+        return $this->keyCache[$cacheKey];
     }
 
     /**
@@ -273,7 +352,11 @@ class Rdb
      */
     protected function groupKey(string $qname, string $gkey): string
     {
-        return sprintf('%s%s', $this->groupKeyPrefix($qname), $gkey);
+        $cacheKey = "group:" . $qname . ":" . $gkey;
+        if (!isset($this->keyCache[$cacheKey])) {
+            $this->keyCache[$cacheKey] = sprintf('%s%s', $this->groupKeyPrefix($qname), $gkey);
+        }
+        return $this->keyCache[$cacheKey];
     }
 
     /**
@@ -284,9 +367,40 @@ class Rdb
      */
     protected function allGroups(string $qname): string
     {
-        return sprintf('%sgroups', $this->queueKeyPrefix($qname));
+        $cacheKey = "all_groups:" . $qname;
+        if (!isset($this->keyCache[$cacheKey])) {
+            $this->keyCache[$cacheKey] = sprintf('%sgroups', $this->queueKeyPrefix($qname));
+        }
+        return $this->keyCache[$cacheKey];
     }
 
+    /**
+     * 执行 Redis 事务
+     * 
+     * @param callable $callback 事务回调函数，接收Redis实例作为参数
+     * @return array 事务执行结果
+     * @throws Exception 当事务执行失败时
+     */
+    protected function executeTransaction(callable $callback): array
+    {
+        try {
+            $this->redis->multi();
+            call_user_func($callback, $this->redis);
+            return $this->redis->exec();
+        } catch (Exception $e) {
+            // 尝试回滚事务
+            try {
+                $this->redis->discard();
+            } catch (Exception $discardException) {
+                // 忽略discard异常
+            }
+            $errorMessage = "Transaction execution failed: " . $e->getMessage();
+            $this->error = $errorMessage;
+            $this->logger->error($errorMessage, ['exception' => $e]);
+            throw $e;
+        }
+    }
+    
     /**
      * 执行 Lua 脚本
      * 
@@ -299,14 +413,21 @@ class Rdb
     protected function executeLuaScript(string $scriptName, array $keys, array $args)
     {
         try {
+            // 尝试从Redis缓存中获取脚本SHA
             $scriptSha = $this->redis->script('LOAD', $this->luaScripts[$scriptName]);
-            return $this->redis->evalSha($scriptSha, $keys, count($keys));
+            // 正确传递键和参数给evalSha
+            return $this->redis->evalSha($scriptSha, array_merge($keys, $args), count($keys));
         } catch (Exception $e) {
             // 尝试直接执行脚本作为备选方案
             try {
-                return $this->redis->eval($this->luaScripts[$scriptName], $keys, count($keys), ...$args);
+                // 确保参数传递正确
+                $fullArgs = array_merge($keys, $args);
+                return $this->redis->eval($this->luaScripts[$scriptName], $fullArgs, count($keys));
             } catch (Exception $e) {
-                throw new Exception('Lua script execution failed: ' . $e->getMessage(), 0, $e);
+                $errorMessage = "Lua script execution failed: " . $e->getMessage();
+                $this->error = $errorMessage;
+                $this->logger->error($errorMessage, ['exception' => $e, 'script_name' => $scriptName]);
+                throw new Exception($errorMessage, 0, $e);
             }
         }
     }
@@ -325,7 +446,7 @@ class Rdb
             $encoded = $data->serializeToString();
             $nanos = $this->nanoseconds();
             
-            $keys = [$taskKey, $pendingKey, '', $this->queuesKey];
+            $keys = [$taskKey, $pendingKey, '', $this->getQueuesKey()];
             $args = [$encoded, 'pending', $nanos, $data->getId()];
             
             $result = $this->executeLuaScript('enqueue', $keys, $args);
@@ -360,11 +481,10 @@ class Rdb
             $encoded = $data->serializeToString();
             $nanos = $this->nanoseconds();
             
-            $keys = [$taskKey, $pendingKey, $uniqueKey, $this->queuesKey];
+            $keys = [$taskKey, $pendingKey, $uniqueKey, $this->getQueuesKey()];
             $args = [$encoded, 'pending', $nanos, $data->getId(), $ttl];
             
             $result = $this->executeLuaScript('enqueueUnique', $keys, $args);
-            
             return $result === 1 ? true : $result;
         } catch (Exception $e) {
             // 记录错误日志
@@ -394,7 +514,7 @@ class Rdb
             $scheduledKey = $this->scheduledKey($data->getQueue());
             $encoded = $data->serializeToString();
             
-            $keys = [$taskKey, '', $scheduledKey, $this->queuesKey];
+            $keys = [$taskKey, '', $scheduledKey, $this->getQueuesKey()];
             $args = [$encoded, 'scheduled', $data->getId(), $processAt];
             
             $result = $this->executeLuaScript('schedule', $keys, $args);
@@ -429,7 +549,7 @@ class Rdb
             $uniqueKey = $data->getUniqueKey();
             $encoded = $data->serializeToString();
             
-            $keys = [$taskKey, '', $uniqueKey, $this->queuesKey];
+            $keys = [$taskKey, '', $uniqueKey, $this->getQueuesKey()];
             $args = [$encoded, 'scheduled', '', $data->getId(), $ttl, $processAt];
             
             $result = $this->executeLuaScript('scheduleUnique', $keys, $args);
@@ -467,7 +587,7 @@ class Rdb
             $encoded = $data->serializeToString();
             $time = time();
             
-            $keys = [$taskKey, '', $groupRedisKey, $allGroupsKey, $this->queuesKey];
+            $keys = [$taskKey, '', $groupRedisKey, $allGroupsKey, $this->getQueuesKey()];
             $args = [$encoded, 'aggregating', $data->getId(), $groupKey, $time];
             
             $result = $this->executeLuaScript('addToGroup', $keys, $args);
@@ -505,7 +625,7 @@ class Rdb
             $encoded = $data->serializeToString();
             $time = time();
             
-            $keys = [$taskKey, '', $groupRedisKey, $allGroupsKey, $this->queuesKey];
+            $keys = [$taskKey, '', $groupRedisKey, $allGroupsKey, $this->getQueuesKey()];
             $args = [$encoded, 'aggregating', $data->getId(), $groupKey, $ttl, $uniqueKey, $time];
             
             $result = $this->executeLuaScript('addToGroupUnique', $keys, $args);
