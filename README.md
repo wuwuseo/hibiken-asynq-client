@@ -38,6 +38,13 @@ Asynq 是一个 Go 语言库，用于将任务排队并通过工作线程异步�
 composer require wuwuseo/hibiken-asynq-client:dev-main
 ```
 
+
+```bash
+composer require wuwuseo/hibiken-asynq-client:1.1.0
+```
+
+
+
 ## 基本使用
 
 ### 1. 创建客户端
