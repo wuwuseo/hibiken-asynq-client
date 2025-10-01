@@ -2,6 +2,8 @@
 namespace Wuwuseo\HibikenAsynqClient;
 
 use Ramsey\Uuid\Uuid;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 Class Client
 {
@@ -10,15 +12,29 @@ Class Client
      */
     protected $broker;
 
+    /**
+     * @var LoggerInterface
+     */
+    protected $logger;
+
     protected string $error = '';
 
     protected int $defaultTimeout = 3600;
 
     protected int $defaultMaxRetry = 25;
 
-    public function __construct(\Redis $redis)
-    {
-        $this->broker = new Rdb($redis);
+    /**
+     * 构造函数
+     * 
+     * @param \Redis $redis Redis 实例
+     * @param LoggerInterface|null $logger 日志记录器
+     */
+    public function __construct(
+        \Redis $redis,
+        LoggerInterface $logger = null
+    ) {
+        $this->logger = $logger ?? new NullLogger();
+        $this->broker = new Rdb($redis, $this->logger);
     }
 
     public function getMessage(){
