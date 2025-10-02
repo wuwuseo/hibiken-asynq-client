@@ -9,9 +9,6 @@
         "ramsey/uuid": "^4.7",
         "psr/log": "^1.1 || ^2.0 || ^3.0"
     },
-    "require-dev": {
-        "phpunit/phpunit": "^9.6"
-    },
     "suggest": {
         "monolog/monolog": "用于更高级的日志记录功能"
     },
