@@ -13,9 +13,10 @@ use Psr\Log\NullLogger;
 class Rdb
 {
     /**
-     * @var \Redis|null Redis 实例，使用前需确保 Redis 扩展已安装
+     * Summary of redis 链接实例
+     * @var Object $redis
      */
-    protected \Redis $redis;
+    protected object $redis;
     protected string $queuesKey = "queues";    
     
     /**
@@ -54,12 +55,12 @@ class Rdb
     /**
      * Rdb 构造函数
      * 
-     * @param \Redis $redis Redis 实例
+     * @param object $redis 实例
      * @param string $namespace Redis命名空间
      * @param LoggerInterface|null $logger 日志记录器
      */
     public function __construct(
-        \Redis $redis,
+        object $redis,
         string $namespace = "",
         LoggerInterface $logger = null
     ) {
@@ -73,7 +74,7 @@ class Rdb
     /**
      * 初始化键缓存
      */
-    protected function initKeyCache()
+    protected function initKeyCache(): void
     {
         $this->keyCache = [];
     }
@@ -83,7 +84,7 @@ class Rdb
      * 
      * @param string $namespace 命名空间
      */
-    public function setNamespace(string $namespace)
+    public function setNamespace(string $namespace): void
     {
         $this->namespace = $namespace;
         $this->initKeyCache(); // 重置键缓存
@@ -233,7 +234,7 @@ class Rdb
     protected function nanoseconds(): string
     {
         [$nanoSeconds, $seconds] = explode(' ', microtime());
-        return bcmul((string)($seconds + $nanoSeconds), '1000000000');
+        return bcmul((string)((float)$seconds + (float)$nanoSeconds), '1000000000');
     }
 
     /**
@@ -410,7 +411,7 @@ class Rdb
      * @return mixed 脚本执行结果
      * @throws Exception 当脚本执行失败时
      */
-    protected function executeLuaScript(string $scriptName, array $keys, array $args)
+    protected function executeLuaScript(string $scriptName, array $keys, array $args): mixed
     {
         try {
             // 尝试从Redis缓存中获取脚本SHA

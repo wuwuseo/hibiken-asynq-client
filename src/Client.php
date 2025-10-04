@@ -11,12 +11,12 @@ class Client
     /**
      * @var Rdb
      */
-    protected $broker;
+    protected Rdb $broker;
 
     /**
      * @var LoggerInterface
      */
-    protected $logger;
+    protected LoggerInterface $logger;
 
     protected string $error = '';
 
@@ -29,11 +29,11 @@ class Client
     /**
      * 构造函数
      * 
-     * @param \Redis $redis Redis 实例
+     * @param object $redis 链接
      * @param LoggerInterface|null $logger 日志记录器
      * @param string $namespace Redis 命名空间
      */
-    public function __construct(\Redis $redis, LoggerInterface $logger = null, string $namespace = 'asynq')
+    public function __construct(object $redis, LoggerInterface $logger = null, string $namespace = 'asynq')
     {
         $this->broker = new Rdb($redis, $namespace);
         $this->logger = $logger ?? new NullLogger();
