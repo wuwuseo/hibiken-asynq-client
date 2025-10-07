@@ -1,6 +1,6 @@
 # hibiken-asynq-client
 
-[English Version](README_EN.md) | [中文版](README.md)
+[English](README_EN.md) | [中文](README.md)
 
 # Hibiken Asynq PHP Client
 
