@@ -1,3 +1,7 @@
+# hibiken-asynq-client
+
+[English Version](README_EN.md) | [中文版](README.md)
+
 # Hibiken Asynq PHP Client
 
 This is a PHP client for the [hibiken/asynq](https://github.com/hibiken/asynq) Go task queue, designed for sending asynchronous tasks from PHP to Asynq queues. It provides a friendly API, error handling, middleware support, and performance optimizations.
@@ -22,10 +26,12 @@ Asynq is a Go library for queueing tasks and processing them asynchronously with
 ## System Requirements
 
 ```
-"php": "^8.1",
-"ext-redis": "^5.3 || ^6.0",
-"google/protobuf": "^3.24",
-"ramsey/uuid": "^4.7"
+    "php": "^8.1",
+    "ext-redis": "^5.3 || ^6.0",
+    "google/protobuf": "^3.24",
+    "ramsey/uuid": "^4.7",
+    "psr/log": "^1.1 || ^2.0 || ^3.0",
+    "ext-bcmath": "*"
 ```
 
 ## Installation
@@ -40,6 +46,7 @@ composer require wuwuseo/hibiken-asynq-client:dev-main
 ```bash
 composer require wuwuseo/hibiken-asynq-client:1.1.2
 ```
+
 
 
 ## Basic Usage
@@ -208,6 +215,9 @@ $client = new Client($redis, $logger);
 ```
 
 ### 9. Custom Redis Namespace
+#### Notes
+You need to synchronously modify the prefix in the Go source code. As of writing this, the Go prefix (namespace) is hard-coded.
+#### Example
 
 ```php
 // Set namespace during construction
@@ -283,9 +293,7 @@ To run the Go worker example, first ensure you have Go environment installed and
 ```bash
 # Execute in the project root directory
 # If go.mod file is missing, create it
-# echo "module github.com/example/asynq-client
-go 1.25.1
-require github.com/hibiken/asynq v0.25.1" > go.mod
+# echo "module github.com/example/asynq-client\ngo 1.25.1\nrequire github.com/hibiken/asynq v0.25.1" > go.mod
 # Install dependencies
 # go get github.com/hibiken/asynq@v0.25.1
 # Run worker example
