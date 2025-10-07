@@ -1,5 +1,7 @@
 # hibiken-asynq-client
 
+[English Version](README_EN.md) | [中文版](README.md)
+
 # Hibiken Asynq PHP Client
 
 这是一个用于 [hibiken/asynq](https://github.com/hibiken/asynq) Go 任务队列的 PHP 客户端，用于在 PHP 中发送异步任务到 Asynq 队列。提供友好的 API、错误处理、中间件支持和性能优化。
